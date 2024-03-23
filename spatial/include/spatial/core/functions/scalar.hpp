@@ -45,6 +45,7 @@ public:
 		RegisterStQuadKey(db);
 		RegisterStRemoveRepeatedPoints(db);
 		RegisterStStartPoint(db);
+		RegisterStTileEnvelope(db);
 		RegisterStX(db);
 		RegisterStXMax(db);
 		RegisterStXMin(db);
@@ -170,6 +171,9 @@ private:
 
 	// ST_StartPoint
 	static void RegisterStStartPoint(DatabaseInstance &db);
+
+	// ST_TileEnvelope
+	static void RegisterStTileEnvelope(DatabaseInstance &db);
 
 	// ST_X
 	static void RegisterStX(DatabaseInstance &db);
