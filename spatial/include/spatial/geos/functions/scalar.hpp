@@ -25,7 +25,6 @@ public:
 		RegisterStEnvelope(db);
 		RegisterStIntersection(db);
 		RegisterStIntersects(db);
-		RegisterStIsClosed(db);
 		RegisterStIsRing(db);
 		RegisterStIsSimple(db);
 		RegisterStIsValid(db);
@@ -37,6 +36,7 @@ public:
 		RegisterStReducePrecision(db);
 		RegisterStRemoveRepeatedPoints(db);
 		RegisterStReverse(db);
+		RegisterStShortestLine(db);
 		RegisterStSimplifyPreserveTopology(db);
 		RegisterStSimplify(db);
 		RegisterStTouches(db);
@@ -62,7 +62,6 @@ private:
 	static void RegisterStEnvelope(DatabaseInstance &db);
 	static void RegisterStIntersection(DatabaseInstance &db);
 	static void RegisterStIntersects(DatabaseInstance &db);
-	static void RegisterStIsClosed(DatabaseInstance &db);
 	static void RegisterStIsRing(DatabaseInstance &db);
 	static void RegisterStIsSimple(DatabaseInstance &db);
 	static void RegisterStIsValid(DatabaseInstance &db);
@@ -74,6 +73,7 @@ private:
 	static void RegisterStReverse(DatabaseInstance &db);
 	static void RegisterStLineMerge(DatabaseInstance &db);
 	static void RegisterStMakeValid(DatabaseInstance &db);
+	static void RegisterStShortestLine(DatabaseInstance &db);
 	static void RegisterStSimplifyPreserveTopology(DatabaseInstance &db);
 	static void RegisterStSimplify(DatabaseInstance &db);
 	static void RegisterStTouches(DatabaseInstance &db);

@@ -2,7 +2,7 @@
 
 #include "spatial/common.hpp"
 #include "spatial/core/geometry/geometry.hpp"
-#include "spatial/core/geometry/cursor.hpp"
+#include "spatial/core/util/cursor.hpp"
 #include "spatial/core/geometry/geometry_type.hpp"
 
 namespace spatial {
@@ -231,7 +231,7 @@ public:
 		cursor.Skip<GeometryType>();
 		cursor.Skip<GeometryProperties>();
 		cursor.Skip<uint16_t>();
-		cursor.Skip(4);
+		cursor.Skip<uint32_t>();
 
 		auto dims = 2 + (has_z ? 1 : 0) + (has_m ? 1 : 0);
 		auto has_bbox = geom.GetProperties().HasBBox();

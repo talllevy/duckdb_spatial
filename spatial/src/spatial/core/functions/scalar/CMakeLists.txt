@@ -11,6 +11,7 @@ set(EXTENSION_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/st_contains.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_dimension.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_distance.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/st_distance_sphere.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_dump.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_endpoint.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_extent.cpp
@@ -21,8 +22,11 @@ set(EXTENSION_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/st_geomfromhexwkb.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_geomfromtext.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_geomfromwkb.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/st_has.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/st_hilbert.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_intersects.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_intersects_extent.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/st_is_closed.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_length.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_makeenvelope.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_makeline.cpp
@@ -33,6 +37,7 @@ set(EXTENSION_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/st_perimeter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_point.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_pointn.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/st_points.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_quadkey.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_removerepeatedpoints.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/st_startpoint.cpp

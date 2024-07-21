@@ -60,7 +60,8 @@ static void CoordinateQuadKeyFunction(DataChunk &args, ExpressionState &state, V
 // GEOMETRY
 //------------------------------------------------------------------------------
 static void GeometryQuadKeyFunction(DataChunk &args, ExpressionState &state, Vector &result) {
-	auto &ctx = GeometryFunctionLocalState::ResetAndGet(state);
+	auto &lstate = GeometryFunctionLocalState::ResetAndGet(state);
+	auto &arena = lstate.arena;
 
 	auto &geom = args.data[0];
 	auto &level = args.data[1];
@@ -68,27 +69,46 @@ static void GeometryQuadKeyFunction(DataChunk &args, ExpressionState &state, Vec
 
 	BinaryExecutor::Execute<geometry_t, int32_t, string_t>(
 	    geom, level, result, count, [&](geometry_t input, int32_t level) {
-		    if (input.GetType() != GeometryType::POINT) {
-			    throw InvalidInputException("ST_QuadKey: Only POINT geometries are supported");
-		    }
-		    auto point = ctx.factory.Deserialize(input);
-		    if (point.IsEmpty()) {
-			    throw InvalidInputException("ST_QuadKey: Empty geometries are not supported");
-		    }
-		    auto vertex = point.As<Point>().Vertices().Get(0);
-		    auto x = vertex.x;
-		    auto y = vertex.y;
-
 		    if (level < 1 || level > 23) {
 			    throw InvalidInputException("ST_QuadKey: Level must be between 1 and 23");
 		    }
-
+		    if (input.GetType() != GeometryType::POINT) {
+			    throw InvalidInputException("ST_QuadKey: Only POINT geometries are supported");
+		    }
+		    auto point = Geometry::Deserialize(arena, input);
+		    if (Point::IsEmpty(point)) {
+			    throw InvalidInputException("ST_QuadKey: Empty geometries are not supported");
+		    }
+		    auto vertex = Point::GetVertex(point);
 		    char buffer[64];
-		    GetQuadKey(x, y, level, buffer);
+		    GetQuadKey(vertex.x, vertex.y, level, buffer);
 		    return StringVector::AddString(result, buffer, level);
 	    });
 }
 
+//------------------------------------------------------------------------------
+// Documentation
+//------------------------------------------------------------------------------
+static constexpr const char *DOC_DESCRIPTION = R"(
+Computes a quadkey from a given lon/lat point.
+
+Compute the [quadkey](https://learn.microsoft.com/en-us/bingmaps/articles/bing-maps-tile-system) for a given lon/lat point at a given level.
+Note that the the parameter order is __longitude__, __latitude__.
+
+`level` has to be between 1 and 23, inclusive.
+
+The input coordinates will be clamped to the lon/lat bounds of the earth (longitude between -180 and 180, latitude between -85.05112878 and 85.05112878).
+
+Throws for any geometry that is not a `POINT`
+)";
+
+static constexpr const char *DOC_EXAMPLE = R"(
+SELECT ST_QuadKey(st_point(11.08, 49.45), 10);
+----
+1333203202
+)";
+
+static constexpr DocTag DOC_TAGS[] = {{"ext", "spatial"}, {"category", "property"}};
 //------------------------------------------------------------------------------
 // Register functions
 //------------------------------------------------------------------------------
@@ -103,6 +123,7 @@ void CoreScalarFunctions::RegisterStQuadKey(DatabaseInstance &db) {
 	                               GeometryFunctionLocalState::Init));
 
 	ExtensionUtil::RegisterFunction(db, set);
+	DocUtil::AddDocumentation(db, "ST_QuadKey", DOC_DESCRIPTION, DOC_EXAMPLE, DOC_TAGS);
 }
 
 } // namespace core

@@ -27,10 +27,14 @@ public:
 		RegisterStForce(db);
 		RegisterStGeometryType(db);
 		RegisterStGeomFromHEXWKB(db);
-        RegisterStGeomFromText(db);
+		RegisterStGeomFromText(db);
 		RegisterStGeomFromWKB(db);
+		RegisterStHas(db);
+		RegisterStHaversine(db);
+		RegisterStHilbert(db);
 		RegisterStIntersects(db);
 		RegisterStIntersectsExtent(db);
+		RegisterStIsClosed(db);
 		RegisterStIsEmpty(db);
 		RegisterStLength(db);
 		RegisterStMakeEnvelope(db);
@@ -42,6 +46,7 @@ public:
 		RegisterStPerimeter(db);
 		RegisterStPoint(db);
 		RegisterStPointN(db);
+		RegisterStPoints(db);
 		RegisterStQuadKey(db);
 		RegisterStRemoveRepeatedPoints(db);
 		RegisterStStartPoint(db);
@@ -118,17 +123,29 @@ private:
 	// ST_GeomFromHEXWKB
 	static void RegisterStGeomFromHEXWKB(DatabaseInstance &db);
 
-    // ST_GeomFromText
-    static void RegisterStGeomFromText(DatabaseInstance &db);
+	// ST_GeomFromText
+	static void RegisterStGeomFromText(DatabaseInstance &db);
 
 	// ST_GeomFromWKB
 	static void RegisterStGeomFromWKB(DatabaseInstance &db);
+
+	// ST_Has(M/Z) + ST_ZMFlag
+	static void RegisterStHas(DatabaseInstance &db);
+
+	// ST_Haversine
+	static void RegisterStHaversine(DatabaseInstance &db);
+
+	// ST_Hilbert
+	static void RegisterStHilbert(DatabaseInstance &db);
 
 	// ST_Intersects
 	static void RegisterStIntersects(DatabaseInstance &db);
 
 	// ST_IntersectsExtent (&&)
 	static void RegisterStIntersectsExtent(DatabaseInstance &db);
+
+	// ST_IsClosed
+	static void RegisterStIsClosed(DatabaseInstance &db);
 
 	// ST_IsEmpty
 	static void RegisterStIsEmpty(DatabaseInstance &db);
@@ -162,6 +179,9 @@ private:
 
 	// ST_PointN
 	static void RegisterStPointN(DatabaseInstance &db);
+
+	// ST_Points
+	static void RegisterStPoints(DatabaseInstance &db);
 
 	// ST_RemoveRepeatedPoints
 	static void RegisterStRemoveRepeatedPoints(DatabaseInstance &db);

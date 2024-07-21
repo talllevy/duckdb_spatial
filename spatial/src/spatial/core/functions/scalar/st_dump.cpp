@@ -5,8 +5,6 @@
 #include "spatial/core/geometry/geometry.hpp"
 
 #include "duckdb/parser/parsed_data/create_scalar_function_info.hpp"
-#include "duckdb/common/vector_operations/unary_executor.hpp"
-#include "duckdb/common/vector_operations/binary_executor.hpp"
 
 namespace spatial {
 
@@ -14,6 +12,7 @@ namespace core {
 
 static void DumpFunction(DataChunk &args, ExpressionState &state, Vector &result) {
 	auto &lstate = GeometryFunctionLocalState::ResetAndGet(state);
+	auto &arena = lstate.arena;
 	auto count = args.size();
 
 	auto &geom_vec = args.data[0];
@@ -32,7 +31,7 @@ static void DumpFunction(DataChunk &args, ExpressionState &state, Vector &result
 		}
 
 		auto geometry_blob = UnifiedVectorFormat::GetData<geometry_t>(geom_format)[in_row_idx];
-		auto geometry = lstate.factory.Deserialize(geometry_blob);
+		auto geometry = Geometry::Deserialize(arena, geometry_blob);
 
 		vector<std::tuple<Geometry, vector<int32_t>>> stack;
 		vector<std::tuple<Geometry, vector<int32_t>>> items;
@@ -45,34 +44,11 @@ static void DumpFunction(DataChunk &args, ExpressionState &state, Vector &result
 			auto current_path = std::get<1>(current);
 
 			stack.pop_back();
-
-			if (current_geom.Type() == GeometryType::MULTIPOINT) {
-				auto mpoint = current_geom.As<MultiPoint>();
-				for (int32_t i = 0; i < mpoint.ItemCount(); i++) {
+			if (current_geom.IsCollection()) {
+				for (int32_t i = 0; i < CollectionGeometry::PartCount(current_geom); i++) {
 					auto path = current_path;
 					path.push_back(i + 1); // path is 1-indexed
-					stack.emplace_back(mpoint[i], path);
-				}
-			} else if (current_geom.Type() == GeometryType::MULTILINESTRING) {
-				auto mline = current_geom.As<MultiLineString>();
-				for (int32_t i = 0; i < mline.ItemCount(); i++) {
-					auto path = current_path;
-					path.push_back(i + 1);
-					stack.emplace_back(mline[i], path);
-				}
-			} else if (current_geom.Type() == GeometryType::MULTIPOLYGON) {
-				auto mpoly = current_geom.As<MultiPolygon>();
-				for (int32_t i = 0; i < mpoly.ItemCount(); i++) {
-					auto path = current_path;
-					path.push_back(i + 1);
-					stack.emplace_back(mpoly[i], path);
-				}
-			} else if (current_geom.Type() == GeometryType::GEOMETRYCOLLECTION) {
-				auto collection = current_geom.As<GeometryCollection>();
-				for (int32_t i = 0; i < collection.ItemCount(); i++) {
-					auto path = current_path;
-					path.push_back(i + 1);
-					stack.emplace_back(collection[i], path);
+					stack.emplace_back(CollectionGeometry::Part(current_geom, i), path);
 				}
 			} else {
 				items.push_back(current);
@@ -102,14 +78,11 @@ static void DumpFunction(DataChunk &args, ExpressionState &state, Vector &result
 		auto &result_path_vec = result_list_children[1];
 
 		// The child geometries must share the same properties as the parent geometry
-		auto props = geometry_blob.GetProperties();
-
 		auto geom_data = FlatVector::GetData<geometry_t>(*result_geom_vec);
 		for (idx_t i = 0; i < geom_length; i++) {
 			// Write the geometry
 			auto &item_blob = std::get<0>(items[i]);
-			geom_data[geom_offset + i] =
-			    lstate.factory.Serialize(*result_geom_vec, item_blob, props.HasZ(), props.HasM());
+			geom_data[geom_offset + i] = Geometry::Serialize(item_blob, *result_geom_vec);
 
 			// Now write the paths
 			auto &path = std::get<1>(items[i]);
@@ -140,6 +113,24 @@ static void DumpFunction(DataChunk &args, ExpressionState &state, Vector &result
 	}
 }
 
+//------------------------------------------------------------------------------
+// Documentation
+//------------------------------------------------------------------------------
+static constexpr const char *DOC_DESCRIPTION = R"(
+Dumps a geometry into a set of sub-geometries and their "path" in the original geometry.
+)";
+
+static constexpr const char *DOC_EXAMPLE = R"(
+select st_dump('MULTIPOINT(1 2,3 4)'::geometry);
+----
+[{'geom': 'POINT(1 2)', 'path': [0]}, {'geom': 'POINT(3 4)', 'path': [1]}]
+)";
+
+static constexpr DocTag DOC_TAGS[] = {{"ext", "spatial"}, {"category", "construction"}};
+
+//------------------------------------------------------------------------------
+// Register functions
+//------------------------------------------------------------------------------
 void CoreScalarFunctions::RegisterStDump(DatabaseInstance &db) {
 	ScalarFunctionSet set("ST_Dump");
 
@@ -150,6 +141,7 @@ void CoreScalarFunctions::RegisterStDump(DatabaseInstance &db) {
 	                   DumpFunction, nullptr, nullptr, nullptr, GeometryFunctionLocalState::Init));
 
 	ExtensionUtil::RegisterFunction(db, set);
+	DocUtil::AddDocumentation(db, "ST_Dump", DOC_DESCRIPTION, DOC_EXAMPLE, DOC_TAGS);
 }
 
 } // namespace core

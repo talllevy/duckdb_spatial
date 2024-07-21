@@ -17,15 +17,16 @@ namespace core {
 // WKB -> GEOMETRY
 //------------------------------------------------------------------------------
 static bool WKBToGeometryCast(Vector &source, Vector &result, idx_t count, CastParameters &parameters) {
+
 	auto &lstate = GeometryFunctionLocalState::ResetAndGet(parameters);
-	WKBReader reader(lstate.factory.allocator);
+	WKBReader reader(lstate.arena);
 
 	bool success = true;
 	UnaryExecutor::ExecuteWithNulls<string_t, geometry_t>(
 	    source, result, count, [&](string_t input, ValidityMask &mask, idx_t idx) {
 		    try {
-			    auto geometry = reader.Deserialize(input);
-			    return lstate.factory.Serialize(result, geometry, reader.GeomHasZ(), reader.GeomHasM());
+			    auto geom = reader.Deserialize(input);
+			    return Geometry::Serialize(geom, result);
 		    } catch (SerializationException &e) {
 			    if (success) {
 				    success = false;
@@ -65,8 +66,8 @@ void CoreCastFunctions::RegisterWKBCasts(DatabaseInstance &db) {
 	// WKB -> BLOB is implicitly castable
 	ExtensionUtil::RegisterCastFunction(db, GeoTypes::WKB_BLOB(), LogicalType::BLOB, DefaultCasts::ReinterpretCast, 1);
 
-	// Geometry -> BLOB is implicitly castable
-	ExtensionUtil::RegisterCastFunction(db, GeoTypes::GEOMETRY(), LogicalType::BLOB, DefaultCasts::ReinterpretCast, 1);
+	// Geometry -> BLOB is explicitly castable
+	ExtensionUtil::RegisterCastFunction(db, GeoTypes::GEOMETRY(), LogicalType::BLOB, DefaultCasts::ReinterpretCast);
 }
 
 } // namespace core

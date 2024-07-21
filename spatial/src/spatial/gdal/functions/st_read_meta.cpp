@@ -56,12 +56,11 @@ static LogicalType LAYER_TYPE = LogicalType::STRUCT({
 
 static unique_ptr<FunctionData> Bind(ClientContext &context, TableFunctionBindInput &input,
                                      vector<LogicalType> &return_types, vector<string> &names) {
-
-	auto file_name = input.inputs[0].GetValue<string>();
 	auto result = make_uniq<GDALMetadataBindData>();
 
+	auto multi_file_reader = MultiFileReader::Create(input.table_function);
 	result->file_names =
-	    MultiFileReader::GetFileList(context, input.inputs[0], "gdal metadata", FileGlobOptions::ALLOW_EMPTY);
+	    multi_file_reader->CreateFileList(context, input.inputs[0], FileGlobOptions::ALLOW_EMPTY)->GetAllFiles();
 
 	names.push_back("file_name");
 	return_types.push_back(LogicalType::VARCHAR);
@@ -184,7 +183,7 @@ static void Scan(ClientContext &context, TableFunctionInput &input, DataChunk &o
 
 	for (idx_t out_idx = 0; out_idx < out_size; out_idx++, state.current_file_idx++) {
 		auto file_name = bind_data.file_names[state.current_file_idx];
-		auto prefixed_file_name = GDALClientContextState::GetOrCreate(context).GetPrefix() + file_name;
+		auto prefixed_file_name = GDALClientContextState::GetOrCreate(context).GetPrefix(file_name);
 
 		GDALDatasetUniquePtr dataset;
 		try {
@@ -207,11 +206,32 @@ static void Scan(ClientContext &context, TableFunctionInput &input, DataChunk &o
 }
 
 //------------------------------------------------------------------------------
+// Documentation
+//------------------------------------------------------------------------------
+static constexpr DocTag DOC_TAGS[] = {{"ext", "spatial"}};
+
+static constexpr const char *DOC_DESCRIPTION = R"(
+    Read and the metadata from a variety of geospatial file formats using the GDAL library.
+
+    The `ST_Read_Meta` table function accompanies the `ST_Read` table function, but instead of reading the contents of a file, this function scans the metadata instead.
+    Since the data model of the underlying GDAL library is quite flexible, most of the interesting metadata is within the returned `layers` column, which is a somewhat complex nested structure of DuckDB `STRUCT` and `LIST` types.
+)";
+
+static constexpr const char *DOC_EXAMPLE = R"(
+    -- Find the coordinate reference system authority name and code for the first layers first geometry column in the file
+    SELECT
+        layers[1].geometry_fields[1].crs.auth_name as name,
+        layers[1].geometry_fields[1].crs.auth_code as code
+    FROM st_read_meta('../../tmp/data/amsterdam_roads.fgb');
+)";
+
+//------------------------------------------------------------------------------
 // Register
 //------------------------------------------------------------------------------
 void GdalMetadataFunction::Register(DatabaseInstance &db) {
-	TableFunction func("st_read_meta", {LogicalType::VARCHAR}, Scan, Bind, Init);
+	TableFunction func("ST_Read_Meta", {LogicalType::VARCHAR}, Scan, Bind, Init);
 	ExtensionUtil::RegisterFunction(db, MultiFileReader::CreateFunctionSet(func));
+	DocUtil::AddDocumentation(db, "ST_Read_Meta", DOC_DESCRIPTION, DOC_EXAMPLE, DOC_TAGS);
 }
 
 } // namespace gdal
